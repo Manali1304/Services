@@ -1,0 +1,112 @@
+Authentication system
+
+1.User Registration:
+	Create new user
+	Validate password strength
+	Hash password before storing
+	Assign role (user/admin)
+	Assign permissions if admin
+{
+  "username": "manali",
+  "email": "manali@gmail.com",
+  "full_name": "Manali Bramhankar",
+  "password": "Strong@123",
+  "role": "user"
+}
+
+2.User Login (JWT Based):
+Verifies username & password
+Generates:
+	Access Token
+	Refresh Token
+	Returns logged-in user details
+	Stores refresh token in database
+{
+  "access_token": "...",
+  "refresh_token": "...",
+  "token_type": "bearer",
+  "user": {
+      "username": "",
+      "email": "",
+      "role": "",
+      "permissions": ""
+  }
+}
+
+3.Access Token System
+✔ Used For:
+	Authenticating API requests
+Sent in header:Authorization: Bearer <access_token>
+
+4.Refresh Token System
+✔ Used For:
+Generating new access token
+Prevents user from logging again
+
+5.Get Logged-in User Profile
+✔ Returns:
+	username
+	email
+	role
+	permissions
+
+
+
+5.Role-Based Access Control (RBAC)
+Roles:
+	Admin
+	User
+Admin has full control.
+
+7.Permission-Based Authorization
+Permissions stored as:
+	add,edit,delete,updat
+
+8.Get All Users (Sorted by Date & Time)
+✔ Sorted by:
+	updated_at DESC
+	created_at DESC
+So latest updated/created user appears on top.
+
+9.Create User (By Admin)
+Permission required:
+	add
+
+10.Update User
+Permission required:
+	edit
+Also updates updated_at
+
+11.Delete User
+Permission required:
+	delete
+
+12.Set User Permissions
+Only Admin can change permissions.
+
+
+13.Database Fields in User Table:
+
+| Field           | Purpose              |
+| --------------- | -------------------- |
+| username        | Unique user          |
+| email           | Contact              |
+| full_name       | Profile              |
+| hashed_password | Secure password      |
+| role            | admin/user           |
+| permissions     | add,edit,delete      |
+| refresh_token   | Stored refresh token |
+| created_at      | Creation time        |
+| updated_at      | Update time          |
+
+
+14.SECURITY FEATURES IMPLEMENTED:
+✔ Password hashing
+✔ JWT authentication
+✔ Refresh tokens
+✔ Role based access
+✔ Permission based access
+✔ Password strength validation
+✔ Reset token verification
+✔ Custom error handling
+✔ Sorted audit listing
