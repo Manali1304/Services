@@ -1,3 +1,4 @@
+from pyexpat import model
 import token
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -507,42 +508,63 @@ def reset_password(
     return {"message": "Password reset successful"}
 
 @app.post("/states")
-def add_state(name: str, db: Session = Depends(get_db)):
+def add_state(name: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)):
+
     state = State(name=name)
     db.add(state)
     db.commit()
     return {"message": "State added successfully"}
 
 @app.get("/states")
-def get_states(db: Session = Depends(get_db)):
+def get_states(
+    current_user = Depends(require_permission_or_admin("view")),
+    db: Session = Depends(get_db)):
     return db.query(State).all()
 
 @app.post("/districts")
-def add_district(name: str, state_id: int, db: Session = Depends(get_db)):
+def add_district(name: str,
+    state_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)):
+
     district = District(name=name, state_id=state_id)
     db.add(district)
     db.commit()
     return {"message": "District added successfully"}
 
 @app.get("/districts/{state_id}")
-def get_districts(state_id: int, db: Session = Depends(get_db)):
+def get_districts(
+    state_id: int,
+    current_user = Depends(require_permission_or_admin("view")),
+    db: Session = Depends(get_db)):
+
     return db.query(District).filter(District.state_id == state_id).all()
 
 @app.post("/cities")
-def add_city(name: str, district_id: int, db: Session = Depends(get_db)):
+def add_city(name: str,
+    district_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)):
     city = City(name=name, district_id=district_id)
     db.add(city)
     db.commit()
     return {"message": "City added successfully"}
 
 @app.get("/cities/{district_id}")
-def get_cities(district_id: int, db: Session = Depends(get_db)):
+def get_cities(
+    district_id: int,
+    current_user = Depends(require_permission_or_admin("view")),
+    db: Session = Depends(get_db)):
     return db.query(City).filter(City.district_id == district_id).all()
 
 
 # Machines
 @app.post("/machines")
-def create_machine(machine: MachineCreate, db: Session = Depends(get_db)):
+def create_machine(machine: MachineCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)):
 
     new_machine = Machine(
         name=machine.name,
@@ -556,14 +578,20 @@ def create_machine(machine: MachineCreate, db: Session = Depends(get_db)):
     return new_machine
 
 @app.get("/machines")
-def get_machines(db: Session = Depends(get_db)):
+def get_machines(
+    current_user = Depends(require_permission_or_admin("view")),
+    db: Session = Depends(get_db)):
 
     machines = db.query(Machine).all()
 
     return machines
 
 @app.put("/machines/{machine_id}")
-def update_machine(machine_id: int, machine: MachineUpdate, db: Session = Depends(get_db)):
+def update_machine(
+   machine_id: int,
+    machine: MachineUpdate,
+    current_user = Depends(require_permission_or_admin("edit")),
+    db: Session = Depends(get_db)):
 
     db_machine = db.query(Machine).filter(Machine.id == machine_id).first()
 
@@ -579,7 +607,10 @@ def update_machine(machine_id: int, machine: MachineUpdate, db: Session = Depend
     return db_machine
 
 @app.delete("/machines/{machine_id}")
-def delete_machine(machine_id: int, db: Session = Depends(get_db)):
+def delete_machine(
+    machine_id: int,
+    current_user = Depends(require_permission_or_admin("delete")),
+    db: Session = Depends(get_db)):
 
     machine = db.query(Machine).filter(Machine.id == machine_id).first()
 
@@ -593,7 +624,10 @@ def delete_machine(machine_id: int, db: Session = Depends(get_db)):
 
 # Models
 @app.post("/models")
-def create_model(model: ModelCreate, db: Session = Depends(get_db)):
+def create_model(machine_id: int,
+    machine: MachineUpdate,
+    current_user = Depends(require_permission_or_admin("edit")),
+    db: Session = Depends(get_db)):
 
     new_model = MachineModel(
         model_name=model.model_name,
@@ -607,7 +641,9 @@ def create_model(model: ModelCreate, db: Session = Depends(get_db)):
     return new_model
 
 @app.get("/machines/{machine_id}/models")
-def get_models(machine_id: int, db: Session = Depends(get_db)):
+def get_models(machine_id: int,
+    current_user = Depends(require_permission_or_admin("view")),
+    db: Session = Depends(get_db)):
 
     models = db.query(MachineModel).filter(
         MachineModel.machine_id == machine_id
@@ -616,7 +652,10 @@ def get_models(machine_id: int, db: Session = Depends(get_db)):
     return models
 
 @app.put("/models/{model_id}")
-def update_model(model_id: int, model: ModelUpdate, db: Session = Depends(get_db)):
+def update_model(model_id: int,
+    model: ModelUpdate,
+    current_user = Depends(require_permission_or_admin("edit")),
+    db: Session = Depends(get_db)):
 
     db_model = db.query(MachineModel).filter(
         MachineModel.id == model_id
@@ -633,7 +672,10 @@ def update_model(model_id: int, model: ModelUpdate, db: Session = Depends(get_db
     return db_model
 
 @app.delete("/models/{model_id}")
-def delete_model(model_id: int, db: Session = Depends(get_db)):
+def delete_model(
+    model_id: int,
+    current_user = Depends(require_permission_or_admin("delete")),
+    db: Session = Depends(get_db)):
 
     model = db.query(MachineModel).filter(
         MachineModel.id == model_id
@@ -648,7 +690,8 @@ def delete_model(model_id: int, db: Session = Depends(get_db)):
     return {"message": "Model deleted"}
 
 @app.get("/api-logs")
-def get_logs(db: Session = Depends(get_db)):
+def get_logs(current_user = Depends(require_permission_or_admin("view")),
+    db: Session = Depends(get_db)):
     return db.query(APILog).all()
 
 from fastapi import FastAPI, Depends, HTTPException
@@ -658,7 +701,9 @@ from database import engine, get_db
 
 # ---------------- CATEGORY ----------------
 @app.post("/category")
-def create_category(category: CategoryCreate, db: Session = Depends(get_db)):
+def create_category(category: CategoryCreate,
+    current_user = Depends(require_permission_or_admin("add")),
+    db: Session = Depends(get_db)):
     db_category = Category(name=category.name)
     db.add(db_category)
     db.commit()
@@ -668,7 +713,9 @@ def create_category(category: CategoryCreate, db: Session = Depends(get_db)):
 
 # ---------------- SUBCATEGORY ----------------
 @app.post("/subcategory")
-def create_subcategory(sub: SubCategoryCreate, db: Session = Depends(get_db)):
+def create_subcategory(sub: SubCategoryCreate,
+    current_user = Depends(require_permission_or_admin("add")),
+    db: Session = Depends(get_db)):
     db_sub = SubCategory(**sub.dict())
     db.add(db_sub)
     db.commit()
@@ -677,15 +724,19 @@ def create_subcategory(sub: SubCategoryCreate, db: Session = Depends(get_db)):
 
 
 @app.get("/subcategory/{category_id}")
-def get_subcategory(category_id: int, db: Session = Depends(get_db)):
+def get_subcategory(category_id: int,
+    current_user = Depends(require_permission_or_admin("view")),
+    db: Session = Depends(get_db)):
     data = db.query(SubCategory).filter(SubCategory.category_id == category_id).all()
     return data
 
 
 # ---------------- ISSUE ----------------
 @app.post("/issue")
-def create_issue(issue: IssueCreate, db: Session = Depends(get_db)):
-    db_issue = Issue(**issue.dict())
+def create_issue(category_id: int,
+    current_user = Depends(require_permission_or_admin("view")),
+    db: Session = Depends(get_db)):
+    db_issue = Issue(**Issue.dict())
     db.add(db_issue)
     db.commit()
     db.refresh(db_issue)
@@ -693,14 +744,20 @@ def create_issue(issue: IssueCreate, db: Session = Depends(get_db)):
 
 
 @app.get("/issue/{subcategory_id}")
-def get_issue(subcategory_id: int, db: Session = Depends(get_db)):
+def get_issue(subcategory_id: int,
+    current_user = Depends(require_permission_or_admin("view")),
+    db: Session = Depends(get_db)):
     data = db.query(Issue).filter(Issue.subcategory_id == subcategory_id).all()
     return data
 
 
 # ---------------- DEALER ----------------
 @app.post("/dealer")
-def create_dealer(dealer: DealerCreate, db: Session = Depends(get_db)):
+def create_dealer(
+    dealer: DealerCreate,
+    current_user = Depends(require_permission_or_admin("add")),
+    db: Session = Depends(get_db)):
+
     db_dealer = Dealer(name=dealer.name)
     db.add(db_dealer)
     db.commit()
