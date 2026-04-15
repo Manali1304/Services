@@ -1,0 +1,6 @@
+make a authentication syatem using python-fastapi 
+In that authentication system -
+	register ,login, access token, refresh token,
+	only admin get all users , admin can set permssions to users(add ,delete, edit),
+	admin can do all permissions,users only do operations which is get by admin permissions,
+	add logout,forgot password
